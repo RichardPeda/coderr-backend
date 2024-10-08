@@ -1,34 +1,40 @@
 from django.db import models
 from userprofile.models import UserProfile
+from django.contrib.auth.models import User
 
 
 # Create your models here.
+
+
 class Offer(models.Model):
-    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=30)
-    image = models.FileField(upload_to='')
+    image = models.FileField(upload_to='', blank=True, null=True)
     description = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now_add=True)
-    min_price = models.DecimalField(max_digits=4, decimal_places=2)
-    min_delivery_time = models.DecimalField(max_digits=2, decimal_places=0)
+    min_price = models.DecimalField(max_digits=7, decimal_places=2, blank=True, null=True)
+    min_delivery_time = models.IntegerField(blank=True, null=True)
 
-    def __str__(self):
-        return f"({self.id}) {self.title}"
+    # def __str__(self):
+    #     return f"({self.id}) {self.title}"
 
-class Features(models.Model):
+class Detail(models.Model):
+    offer = models.ForeignKey(Offer, related_name='details', on_delete=models.CASCADE)
     title = models.CharField(max_length=30)
-
-    def __str__(self):
-         return f"({self.id}) {self.title}"
-
-class OfferDetails(models.Model):
-    title = models.CharField(max_length=30)
-    revisions = models.DecimalField(max_digits=2, decimal_places=0)
-    delivery_time_in_days = models.DecimalField(max_digits=2, decimal_places=0)
-    price = models.DecimalField(max_digits=4, decimal_places=2)
+    revisions = models.IntegerField()
+    delivery_time_in_days = models.IntegerField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
     offer_type = models.CharField(max_length=10)
-    features = models.ManyToManyField(Features)
+    features = models.TextField(max_length=200, blank=True, null=True)
+  
 
     def __str__(self):
         return f"({self.id}) {self.title}"
+    
+# class Feature(models.Model):
+#     details = models.ForeignKey(Detail, related_name='features', null=True, on_delete=models.CASCADE)
+#     title = models.CharField(max_length=30, null=True, blank=True)
+
+#     def __str__(self):
+#          return self.title
