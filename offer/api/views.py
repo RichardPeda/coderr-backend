@@ -1,13 +1,12 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from offer.api.serializers import OfferDetailUrlSerializer, OfferGetSerializer, OfferCreateSerializer, DetailSerializer
+from offer.api.serializers import OfferDetailUrlSerializer, OfferGetSerializer, OfferCreateSerializer, DetailSerializer, SingleOfferGetSerializer, SingleOfferPatchSerializer
 from offer.models import Offer, Detail
 
 
 
 class OfferView(APIView):
-    serializer_class = OfferGetSerializer
 
     def get(self, request):
         offer = Offer.objects.all()
@@ -19,27 +18,29 @@ class OfferView(APIView):
         serializer = OfferCreateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=self.request.user)
-            print(f"serializer.data{serializer.data}")
             return Response(serializer.data)
         return Response(serializer.errors)
     
 
 
-    # def perform_create(self, serializer):
-      
-    #     serializer.save(user=self.request.user)
+class SingleOfferView(APIView):
+   
 
-
-
-# class OfferDetailView(APIView):
-#     serializer_class = OfferDetailSerializer
-
-#     def get(self, request):
-#         offer_detail = OfferDetails.objects.all()
-#         serializer = self.serializer_class(offer_detail, many=True, )
-     
-#         return Response(serializer.data)
+    def get(self, request,pk):
+        offer_detail = Offer.objects.get(pk=pk)
+        serializer = SingleOfferGetSerializer(offer_detail, context={'request': request})
+        return Response(serializer.data)
     
+    def patch(self, request,pk):
+        offer_detail = Offer.objects.get(pk=pk)
+        print(f"offer_detail{offer_detail}")
+        serializer = SingleOfferPatchSerializer(offer_detail, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save(user=self.request.user)
+            return Response(serializer.data)
+        return Response(serializer.errors)
+
+
 
 class OfferDetailsView(APIView):
     serializer_class = DetailSerializer
@@ -51,3 +52,4 @@ class OfferDetailsView(APIView):
         serializer = self.serializer_class(offer_detail, context={'request': request})
      
         return Response(serializer.data)
+    
