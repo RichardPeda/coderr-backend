@@ -27,14 +27,19 @@ class Feature(models.Model):
 
     def __str__(self):
         return f"{self.title}"
+    
 class Detail(models.Model):
-    offer = models.ForeignKey(Offer, related_name='details', on_delete=models.CASCADE)
     title = models.CharField(max_length=30)
     revisions = models.IntegerField()
     delivery_time_in_days = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     offer_type = models.CharField(max_length=10)
     features = models.ManyToManyField(Feature, related_name='features_set')
+
+
+class OfferDetail(Detail):
+    offer = models.ForeignKey(Offer, related_name='details', on_delete=models.CASCADE)
+  
     
     def __str__(self):
         return f"({self.id}) {self.title}"

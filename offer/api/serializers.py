@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from offer.models import Feature, Offer, Detail
+from offer.models import Feature, Offer, OfferDetail
 from userprofile.api.serializers import UserProfileSerializer, UserSerializer
 from userprofile.models import UserProfile
 from django.contrib.auth.models import User
@@ -18,12 +18,12 @@ class FeatureSerializer(serializers.ModelSerializer):
 
 class OfferDetailUrlSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = Detail
+        model = OfferDetail
         fields = ['id', 'url']
 class DetailSerializer(serializers.ModelSerializer):
     features = serializers.StringRelatedField(many=True)
     class Meta:
-        model = Detail
+        model = OfferDetail
         fields = ['id', 'title','revisions','delivery_time_in_days','price','offer_type','features' ]
         depth = 1
 
@@ -47,7 +47,7 @@ class FeatureCreateSerializer(serializers.ListField):
 class DetailCreateSerializer(serializers.ModelSerializer):
     features =   FeatureCreateSerializer()  
     class Meta:
-        model = Detail
+        model = OfferDetail
         fields = ['id', 'title','revisions','delivery_time_in_days','price','features','offer_type', ]
 
     def validate_features(self, value):
@@ -98,7 +98,7 @@ class OfferCreateSerializer(serializers.ModelSerializer):
         offer.save()
         for val_detail in val_details:
             val_features = val_detail.pop('features')
-            detail = Detail.objects.create(offer=offer, **val_detail)
+            detail = OfferDetail.objects.create(offer=offer, **val_detail)
             for val in val_features:
                 detail.features.add(val) 
         
@@ -109,8 +109,17 @@ class OfferCreateSerializer(serializers.ModelSerializer):
 class DetailQuerySerializer(serializers.ModelSerializer):
     features =   FeatureCreateSerializer()  
     class Meta:
-        model = Detail
+        model = OfferDetail
         fields = ['id', 'title','revisions','delivery_time_in_days','price','features','offer_type', ]
+
+    # def to_representation(self, data):
+    #         print(f"data{data}")
+    #         print(f"self{self}")
+    #         req = self.parent.parent.parent
+    #         print(f"req {req}")
+    #         # data = data.filter(delete=False)
+    #         return super(DetailQuerySerializer, self).to_representation(data)
+    
 
 
 class SingleOfferGetSerializer(serializers.ModelSerializer):
@@ -120,22 +129,34 @@ class SingleOfferGetSerializer(serializers.ModelSerializer):
         model = Offer
         fields = ['id', 'user','title', 'image', 'description', 'created_at', 'updated_at',  'details', 'min_price', 'min_delivery_time', 'user_details']
 
+    # def __init__(self, instance=None, data=..., **kwargs):
+    #     super().__init__(instance, data, **kwargs)
+
 
 class SingleOfferPatchSerializer(serializers.ModelSerializer):
     details = DetailQuerySerializer(many=True)
+    # details = serializers.SerializerMethodField('get_details')
+
     class Meta:
         model = Offer
         fields = ['id', 'user','title', 'image', 'description', 'created_at', 'updated_at',  'details', 'min_price', 'min_delivery_time',]
+    
+    # def get_details(self, obj):
+    #     print(f"obj {self}")
+    #     detail = Detail.objects.all()
+    #     serializer = DetailQuerySerializer(detail, many=True)
+    #     return serializer.data
 
     def update(self, instance, validated_data):
-
+        print(f"validated_data{validated_data}")
+        # return validated_data
         details_val = validated_data.pop('details')
         if len(details_val) > 0:
-            details_queryset = Detail.objects.filter(offer=instance)
+            details_queryset = OfferDetail.objects.filter(offer=instance)
             for detail_val in details_val:
                 features_val = detail_val.pop('features')
                 detail_obj = details_queryset.get(offer_type=detail_val['offer_type'])
-              
+                print(f"detail_obj{detail_obj}")
                 if detail_val['title']:
                     detail_obj.title = detail_val['title']
                 if detail_val['revisions']:
@@ -160,4 +181,5 @@ class SingleOfferPatchSerializer(serializers.ModelSerializer):
 
         instance.updated_at = timezone.now()
         instance.save()
+        # print(f"instance{instance}")
         return instance
