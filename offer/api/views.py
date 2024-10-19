@@ -4,7 +4,7 @@ from rest_framework import status
 
 from offer.api.serializers import OfferDetailUrlSerializer, OfferGetSerializer, OfferCreateSerializer, DetailSerializer, SingleOfferGetSerializer, SingleOfferPatchSerializer
 from offer.models import Offer, OfferDetail
-from django.db.models import Prefetch
+from userprofile.models import UserProfile
 
 
 
@@ -17,9 +17,12 @@ class OfferView(APIView):
         return Response(serializer.data)
     
     def post(self, request):
+
+        business_user = UserProfile.objects.get(user=request.user)
+
         serializer = OfferCreateSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=self.request.user)
+            serializer.save(user=business_user)
             return Response(serializer.data)
         return Response(serializer.errors)
     
@@ -34,9 +37,8 @@ class SingleOfferView(APIView):
         return Response(serializer.data)
     
     def patch(self, request,pk):
-        queryset = Offer.objects.get(pk=pk)
-        # queryset = Offer.objects.filter(pk=pk).prefetch_related(Prefetch('details', queryset=Detail.objects.all()))
-        serializer = SingleOfferPatchSerializer(queryset, data=request.data, partial=True, context={'request': request})
+        offer = Offer.objects.get(pk=pk)
+        serializer = SingleOfferPatchSerializer(offer, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
     
@@ -47,11 +49,7 @@ class SingleOfferView(APIView):
         offer_instance = Offer.objects.get(pk=pk)
         offer_instance.delete()
         return Response({})
-    # def get_queryset(self):
-    #     queryset = super().get_queryset()
-    #     return queryset.prefetch_related(
-    #         Prefetch('post_set', queryset=Detail.objects.get(pk=280))
-    #     )
+  
 
 
 class OfferDetailsView(APIView):

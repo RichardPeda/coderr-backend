@@ -28,7 +28,7 @@ class DetailSerializer(serializers.ModelSerializer):
         depth = 1
 
 class OfferGetSerializer(serializers.ModelSerializer):
-    user_details = UserSerializer(source='user', read_only=True)
+    user_details = UserProfileSerializer(source='user', read_only=True)
     details = OfferDetailUrlSerializer(many=True)
     class Meta:
         model = Offer

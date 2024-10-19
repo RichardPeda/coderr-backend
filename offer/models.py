@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 
 
 class Offer(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     title = models.CharField(max_length=30)
     image = models.FileField(upload_to='', blank=True, null=True)
     description = models.CharField(max_length=100)
