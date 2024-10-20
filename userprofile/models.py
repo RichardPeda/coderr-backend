@@ -3,8 +3,8 @@ from django.contrib.auth.models import User
 
 # Create your models here.
 class UserProfile(models.Model):
-    BUSINESS = "bu"
-    CUSTOMER = "cu"
+    BUSINESS = "business"
+    CUSTOMER = "customer"
    
     TYPE_CHOICES = {
         BUSINESS: "business",

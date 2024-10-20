@@ -8,8 +8,8 @@ from userprofile.models import UserProfile
 
 
 class Order(models.Model):
-    PROGRESS = "PRO"
-    COMPLETE = "COM"
+    PROGRESS = "in_progress"
+    COMPLETE = "completed"
    
     STATUS_COICES = {
         PROGRESS: "in_progress",

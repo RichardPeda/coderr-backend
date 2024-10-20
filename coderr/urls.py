@@ -19,7 +19,8 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from offer.api.views import OfferView,OfferDetailsView, SingleOfferView
-from order.api.views import OrderView
+from order.api.views import CompetedOrderCountView, OrderCountView, OrderView, SingleOrderView
+from userprofile.api.views import BaseInfoView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -30,6 +31,12 @@ urlpatterns = [
 
 
     path('orders/', OrderView.as_view()),
+    path('orders/<int:pk>/', SingleOrderView.as_view()),
+    path('order-count/<int:pk>/', OrderCountView.as_view()),
+    path('completed-order-count/<int:pk>/', CompetedOrderCountView.as_view()),
+
+
+    path('base-info/', BaseInfoView.as_view()),
 
 
 ]

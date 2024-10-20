@@ -26,28 +26,39 @@ class OrderSerializer(serializers.ModelSerializer):
    
 
     def create(self, validated_data):
-        print(f"validated_data {validated_data}")
         return Order.objects.create(**validated_data)
+    
+    def update(self, instance, validated_data):
+        instance.status = validated_data.get('status', instance.status)
+        instance.save()
+        return instance
+
     
     def validate_offer_detail_id(self, value):
         print(value)
         return value
     
-    # def validate_offer_detail(self, value):
-    #     print(value)
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        customer_user = representation.pop('customer_user')
+        business_user = representation.pop('business_user')
+        status = representation.pop('status')
 
-
-    # def validate_customer_user(self, value):
-    #     customer = UserProfile.objects.get(pk=value)
-    #     if customer.type == 'business':
-    #         raise serializers.ValidationError()
-    #     return value
+        representation['id'] = instance.id
+        representation['customer_user'] = customer_user
+        representation['business_user'] = business_user
+        
+        details = representation.pop('offer_detail')
+        
+        for key, value in details.items():
+            if key is not 'id':
+                representation[key] = value
+        
+        representation['status'] = status
+        return representation
+  
     
-    # def validate_business_user(self, value):
-    #     customer = UserProfile.objects.get(pk=value)
-    #     if customer.type == 'customer':
-    #         raise serializers.ValidationError()
-    #     return value
+   
 
 class OrderSetSerializer(serializers.Serializer):
     offer_detail = DetailCreateSerializer(read_only=True)
@@ -67,9 +78,6 @@ class OrderSetSerializer(serializers.Serializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        print(f"representation {representation}")
-        print(f"instance {instance}")
-
         customer_user = representation.pop('customer_user')
         business_user = representation.pop('business_user')
         status = representation.pop('status')
@@ -78,9 +86,6 @@ class OrderSetSerializer(serializers.Serializer):
         representation['customer_user'] = customer_user
         representation['business_user'] = business_user
         
-
-
-
         details = representation.pop('offer_detail')
         
         for key, value in details.items():

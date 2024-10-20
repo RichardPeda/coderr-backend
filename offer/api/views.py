@@ -25,12 +25,9 @@ class OfferView(APIView):
             serializer.save(user=business_user)
             return Response(serializer.data)
         return Response(serializer.errors)
-    
-
 
 class SingleOfferView(APIView):
    
-
     def get(self, request,pk):
         offer_detail = Offer.objects.get(pk=pk)
         serializer = SingleOfferGetSerializer(offer_detail, context={'request': request})

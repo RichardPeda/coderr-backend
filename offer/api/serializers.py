@@ -141,15 +141,8 @@ class SingleOfferPatchSerializer(serializers.ModelSerializer):
         model = Offer
         fields = ['id', 'user','title', 'image', 'description', 'created_at', 'updated_at',  'details', 'min_price', 'min_delivery_time',]
     
-    # def get_details(self, obj):
-    #     print(f"obj {self}")
-    #     detail = Detail.objects.all()
-    #     serializer = DetailQuerySerializer(detail, many=True)
-    #     return serializer.data
-
+   
     def update(self, instance, validated_data):
-        print(f"validated_data{validated_data}")
-        # return validated_data
         details_val = validated_data.pop('details')
         if len(details_val) > 0:
             details_queryset = OfferDetail.objects.filter(offer=instance)
