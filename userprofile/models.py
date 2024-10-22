@@ -22,3 +22,13 @@ class UserProfile(models.Model):
 
     def __str__(self) -> str:
         return f"({self.id}) {self.user}"
+    
+
+class Review(models.Model):
+    business_user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='review_business_user')
+    reviewer = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='review_reviewer')
+    rating = models.IntegerField()
+    description = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
+

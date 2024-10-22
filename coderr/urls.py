@@ -20,13 +20,20 @@ from django.conf import settings
 from django.conf.urls.static import static
 from offer.api.views import OfferView,OfferDetailsView, SingleOfferView
 from order.api.views import CompetedOrderCountView, OrderCountView, OrderView, SingleOrderView
-from userprofile.api.views import BaseInfoView
+from userprofile.api.views import BaseInfoView, CustomerProfileView, LoginView, SingleProfileView, BusinessProfileView, RegisterView, ReviewView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/login/', LoginView.as_view()),
+    path('api/registration/', RegisterView.as_view()),
+    path('api/profile/<int:pk>/', SingleProfileView.as_view()),  
+    path('profiles/business/', BusinessProfileView.as_view()),  
+    path('profiles/customer/', CustomerProfileView.as_view()),  
+
+
+
     path('offers/', OfferView.as_view()),
     path('offers/<int:pk>/', SingleOfferView.as_view()),
-    # path('offersdetails/', OfferDetailView.as_view()),
     path('offersdetails/<int:pk>/', OfferDetailsView.as_view(), name='offerdetail-detail'),
 
 
@@ -36,7 +43,9 @@ urlpatterns = [
     path('completed-order-count/<int:pk>/', CompetedOrderCountView.as_view()),
 
 
-    path('base-info/', BaseInfoView.as_view()),
+    path('api/base-info/', BaseInfoView.as_view()),
+    path('api/reviews/', ReviewView.as_view()),
+
 
 
 ]
