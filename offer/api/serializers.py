@@ -123,7 +123,7 @@ class DetailQuerySerializer(serializers.ModelSerializer):
 
 
 class SingleOfferGetSerializer(serializers.ModelSerializer):
-    user_details = UserSerializer(source='user', read_only=True)
+    user_details = UserProfileSerializer(source='user', read_only=True)
     details = DetailQuerySerializer(many=True)
     class Meta:
         model = Offer

@@ -10,10 +10,12 @@ from userprofile.models import UserProfile
 class Order(models.Model):
     PROGRESS = "in_progress"
     COMPLETE = "completed"
+    CANCEL = "cancelled"
    
     STATUS_COICES = {
         PROGRESS: "in_progress",
         COMPLETE: "completed",
+        CANCEL: "cancelled"
       
     }   
     offer_detail = models.ForeignKey(OfferDetail, on_delete=models.CASCADE, related_name='order_offer_detail')

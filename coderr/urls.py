@@ -24,23 +24,24 @@ from userprofile.api.views import BaseInfoView, CustomerProfileView, LoginView, 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api-auth/', include('rest_framework.urls')),
     path('api/login/', LoginView.as_view()),
     path('api/registration/', RegisterView.as_view()),
     path('api/profile/<int:pk>/', SingleProfileView.as_view()),  
-    path('profiles/business/', BusinessProfileView.as_view()),  
-    path('profiles/customer/', CustomerProfileView.as_view()),  
+    path('api/profiles/business/', BusinessProfileView.as_view()),  
+    path('api/profiles/customer/', CustomerProfileView.as_view()),  
 
 
 
-    path('offers/', OfferView.as_view()),
-    path('offers/<int:pk>/', SingleOfferView.as_view()),
-    path('offersdetails/<int:pk>/', OfferDetailsView.as_view(), name='offerdetail-detail'),
+    path('api/offers/', OfferView.as_view()),
+    path('api/offers/<int:pk>/', SingleOfferView.as_view()),
+    path('api/offerdetails/<int:pk>/', OfferDetailsView.as_view(), name='offerdetail-detail'),
 
 
-    path('orders/', OrderView.as_view()),
-    path('orders/<int:pk>/', SingleOrderView.as_view()),
-    path('order-count/<int:pk>/', OrderCountView.as_view()),
-    path('completed-order-count/<int:pk>/', CompetedOrderCountView.as_view()),
+    path('api/orders/', OrderView.as_view()),
+    path('api/orders/<int:pk>/', SingleOrderView.as_view()),
+    path('api/order-count/<int:pk>/', OrderCountView.as_view()),
+    path('api/completed-order-count/<int:pk>/', CompetedOrderCountView.as_view()),
 
 
     path('api/base-info/', BaseInfoView.as_view()),

@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 from django.db import models
 from userprofile.models import UserProfile
@@ -13,8 +14,8 @@ class Offer(models.Model):
     title = models.CharField(max_length=30)
     image = models.FileField(upload_to='', blank=True, null=True)
     description = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=datetime.now)
+    updated_at = models.DateTimeField(default=datetime.now)
     min_price = models.DecimalField(max_digits=7, decimal_places=2, blank=True, null=True)
     min_delivery_time = models.IntegerField(blank=True, null=True)
 
