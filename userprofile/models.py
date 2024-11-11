@@ -15,12 +15,12 @@ class UserProfile(models.Model):
     file = models.FileField(upload_to='uploads/userprofile/', null=True, blank=True)
     location = models.CharField(max_length=20)
     tel = models.CharField(max_length=20)
-    description = models.CharField(max_length=20)
+    description = models.CharField(max_length=100)
     working_hours = models.CharField(max_length=20)
     type = models.CharField(max_length=20, choices=TYPE_CHOICES, default=CUSTOMER)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f"({self.id}) {self.user}"
     
 

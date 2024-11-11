@@ -1,3 +1,4 @@
+import re
 from rest_framework import serializers
 
 from offer.api.serializers import DetailCreateSerializer, DetailSerializer, OfferGetSerializer
@@ -78,13 +79,15 @@ class OrderSetSerializer(serializers.Serializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
+        print(representation)
         customer_user = representation.pop('customer_user')
         business_user = representation.pop('business_user')
         status = representation.pop('status')
 
         representation['id'] = instance.id
-        representation['customer_user'] = customer_user
-        representation['business_user'] = business_user
+        
+        representation['customer_user'] = int(re.search(r'\((.*?)\)',customer_user).group(1))
+        representation['business_user'] = int(re.search(r'\((.*?)\)',business_user).group(1))
         
         details = representation.pop('offer_detail')
         

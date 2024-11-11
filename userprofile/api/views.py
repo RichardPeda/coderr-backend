@@ -1,3 +1,4 @@
+import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -6,14 +7,20 @@ from offer.api.serializers import DetailQuerySerializer
 from offer.models import Offer, OfferDetail
 from order.api.serializers import OrderSerializer, OrderSetSerializer
 from order.models import Order
-from userprofile.api.serializers import ReviewSerializer, UserProfileSerializer, UserSerializer
+from userprofile.api.serializers import ReviewSerializer, UserGetProfileSerializer, UserProfileSerializer, UserSerializer
 from userprofile.models import Review, UserProfile
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth.models import User
+from rest_framework import generics
+from django_filters.rest_framework import DjangoFilterBackend
+from django_filters import rest_framework as filters
+# from rest_framework import filters
 
+from rest_framework.filters import OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 
@@ -34,22 +41,41 @@ class BaseInfoView(APIView):
             "offer_count": len(offers),
             }
         )
+
+
+class ReviewModelFilter(filters.FilterSet):
+    business_user_id = filters.NumberFilter(field_name='business_user')
+
+    class Meta:
+        model = Review
+        fields = ['business_user_id']
+
+class ReviewView(generics.ListCreateAPIView):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    pagination_class = None
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    ordering_fields = ['rating', 'updated_at']
+    # filterset_fields = ['business_user_id']
+    filterset_class = ReviewModelFilter
     
+    
+    
+    
+    # def get(self, request):
+    #     queryset = Review.objects.all()
 
-class ReviewView(APIView):
-    def get(self, request):
-        queryset = Review.objects.all()
+    #     business_user_id_param = self.request.query_params.get('business_user_id', None)
+    #     print(business_user_id_param)
+    #     if business_user_id_param is not None:
+    #         queryset = queryset.filter(business_user=business_user_id_param)
 
-        business_user_id_param = self.request.query_params.get('business_user_id')
-        if business_user_id_param is not None:
-            queryset = queryset.filter(business_user=business_user_id_param)
+    #     reviewer_id_param = self.request.query_params.get('reviewer_id', None)
+    #     if reviewer_id_param is not None:
+    #         queryset = queryset.filter(reviewer=reviewer_id_param)
 
-        reviewer_id_param = self.request.query_params.get('reviewer_id')
-        if reviewer_id_param is not None:
-            queryset = queryset.filter(reviewer=reviewer_id_param)
-
-        serializer = ReviewSerializer(queryset, many=True)
-        return Response(serializer.data)
+    #     serializer = ReviewSerializer(queryset, many=True)
+    #     return Response(serializer.data)
     
 
 class LoginView(ObtainAuthToken):
@@ -100,14 +126,20 @@ class RegisterView(APIView):
 class SingleProfileView(APIView):
     def get(self, request, pk):
         profile = UserProfile.objects.get(pk=pk)
-        serializer = UserProfileSerializer(profile)
+        serializer = UserGetProfileSerializer(profile)
         return Response(serializer.data)
     
     def patch(self, request, pk):
+        my_data = request.data.dict()
+        # del my_data['first_name']
+        # my_data = my_data.pop('last_name', None)
+        print(f"request {my_data}")
+        
         profile = UserProfile.objects.get(pk=pk)
-
-        serializer = UserProfileSerializer(profile, data=request.data, partial=True)
-        if serializer.is_valid():
+        print(f"profile{profile}")
+        
+        serializer = UserGetProfileSerializer(profile, data=my_data, partial=True, context={'request': request})
+        if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors)

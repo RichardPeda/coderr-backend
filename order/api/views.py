@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from order.api.permissions import IsCustomerToPostOrder
 from order.api.serializers import OrderSerializer, OrderSetSerializer
 from order.models import Order
 from userprofile.models import UserProfile
@@ -9,14 +10,18 @@ from django.core.exceptions import ObjectDoesNotExist
 
 
 class OrderView(APIView):
+    
+    permission_classes = [IsCustomerToPostOrder]
     def get(self, request):
         order = Order.objects.all()
+        self.check_object_permissions(request, order)
         serializer = OrderSerializer(order, many=True, )
         # context={'request': request}
         return Response(serializer.data)
     
     def post(self, request):
         customer_user = UserProfile.objects.get(user=request.user)
+        self.check_object_permissions(request, customer_user)
         serializer = OrderSetSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(customer_user=customer_user)
