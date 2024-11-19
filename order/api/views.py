@@ -1,11 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from order.api.permissions import IsCustomerToPostOrder
+from order.api.permissions import IsBusinessUserOrAdmin, IsCustomerToPostOrder
 from order.api.serializers import OrderSerializer, OrderSetSerializer
 from order.models import Order
 from userprofile.models import UserProfile
 from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import get_object_or_404
+
 
 
 
@@ -13,15 +15,30 @@ class OrderView(APIView):
     
     permission_classes = [IsCustomerToPostOrder]
     def get(self, request):
-        order = Order.objects.all()
+        
+        try:
+            user = UserProfile.objects.get(user=request.user)
+            order = Order.objects.all()
+            if user.type == 'business':
+                print(user.type)
+                order = order.filter(business_user=user)
+            else:
+                print(user.type)
+                order = order.filter(customer_user=user)            
+        except:
+            order = Order.objects.none()
         self.check_object_permissions(request, order)
         serializer = OrderSerializer(order, many=True, )
-        # context={'request': request}
         return Response(serializer.data)
+        
     
     def post(self, request):
-        customer_user = UserProfile.objects.get(user=request.user)
-        self.check_object_permissions(request, customer_user)
+        try:
+            customer_user = UserProfile.objects.get(user=request.user)
+            print(customer_user)
+            self.check_object_permissions(request, customer_user)
+        except:
+            self.permission_denied(request)
         serializer = OrderSetSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(customer_user=customer_user)
@@ -29,13 +46,19 @@ class OrderView(APIView):
         return Response(serializer.errors)
     
 class SingleOrderView(APIView):
+    permission_classes = [IsBusinessUserOrAdmin]
     def get(self, request, pk):
-        order = Order.objects.get(pk=pk)
+        try:
+            order = get_object_or_404(Order, pk=pk)
+        except:
+            order = Order.objects.none()
+        self.check_object_permissions(request, order)
         serializer = OrderSerializer(order)
         return Response(serializer.data)
     
     def patch(self, request,pk):
         order = Order.objects.get(pk=pk)
+        self.check_object_permissions(request, order)
         serializer = OrderSerializer(order, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
@@ -44,6 +67,7 @@ class SingleOrderView(APIView):
     
     def delete(self, request, pk):
         order_instance = Order.objects.get(pk=pk)
+        self.check_object_permissions(request, order_instance)
         order_instance.delete()
         return Response({})
     
@@ -55,6 +79,7 @@ class OrderCountView(APIView):
                 return Response({"error": "Business user not found."})
             
             orders = Order.objects.filter(business_user=user)
+            orders = orders.filter(status='in_progress')
             return Response({"order-count": len(orders)})
         except ObjectDoesNotExist:
             return Response({"error": "Business user not found."})
@@ -68,7 +93,7 @@ class CompetedOrderCountView(APIView):
                 return Response({"error": "Business user not found."})
             
             orders = Order.objects.filter(business_user=user)
-            completed = orders.filter(status='in_progress')
+            completed = orders.filter(status='completed')
             return Response({"completed_order_count": len(completed)})
         
         except ObjectDoesNotExist:

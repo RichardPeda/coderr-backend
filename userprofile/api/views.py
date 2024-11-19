@@ -7,6 +7,7 @@ from offer.api.serializers import DetailQuerySerializer
 from offer.models import Offer, OfferDetail
 from order.api.serializers import OrderSerializer, OrderSetSerializer
 from order.models import Order
+from userprofile.api.permissions import IsOwnerOrAdmin
 from userprofile.api.serializers import ReviewSerializer, UserGetProfileSerializer, UserProfileSerializer, UserSerializer
 from userprofile.models import Review, UserProfile
 from django.core.exceptions import ObjectDoesNotExist
@@ -124,21 +125,20 @@ class RegisterView(APIView):
     
 
 class SingleProfileView(APIView):
+    permission_classes = [IsOwnerOrAdmin]
     def get(self, request, pk):
         profile = UserProfile.objects.get(pk=pk)
+        self.check_object_permissions(request, obj=profile)
         serializer = UserGetProfileSerializer(profile)
         return Response(serializer.data)
     
     def patch(self, request, pk):
-        my_data = request.data.dict()
-        # del my_data['first_name']
-        # my_data = my_data.pop('last_name', None)
-        print(f"request {my_data}")
-        
-        profile = UserProfile.objects.get(pk=pk)
-        print(f"profile{profile}")
-        
-        serializer = UserGetProfileSerializer(profile, data=my_data, partial=True, context={'request': request})
+        print(request.data)
+        # my_data = request.data.dict()
+        profile = UserProfile.objects.get(pk=pk)  
+        self.check_object_permissions(request, obj=profile)
+      
+        serializer = UserGetProfileSerializer(profile, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data)

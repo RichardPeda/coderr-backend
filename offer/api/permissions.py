@@ -15,14 +15,8 @@ class IsBusinessUserToCreateOffer(BasePermission):
         
 class IsOwnerOfOfferOrAdmin(BasePermission):
     def has_object_permission(self, request, view, obj):
-        if request.method in SAFE_METHODS:
-            print(obj.user)
-            print(request.user)
-            
+        if request.method in SAFE_METHODS:        
             return True
         else:
-            print(obj.user)
-            print(request.user)
-
             return bool(request.user == obj.user or request.user.is_superuser)  
         
