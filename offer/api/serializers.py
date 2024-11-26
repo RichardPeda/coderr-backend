@@ -1,15 +1,7 @@
 from rest_framework import serializers
-
 from offer.models import Feature, Offer, OfferDetail
-from userprofile.api.serializers import UserProfileSerializer, UserSerializer
-from userprofile.models import UserProfile
-from django.contrib.auth.models import User
-from rest_framework.fields import ListField
-from drf_writable_nested.serializers import WritableNestedModelSerializer
+from userprofile.api.serializers import UserProfileSerializer
 from django.utils import timezone
-
-
-
 
 class FeatureSerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,9 +26,6 @@ class OfferGetSerializer(serializers.ModelSerializer):
         model = Offer
         fields = ['id', 'user','title', 'image', 'description', 'created_at', 'updated_at',  'details', 'min_price', 'min_delivery_time', 'user_details']
 
-
-
-
 class FeatureCreateSerializer(serializers.ListField):
     title = serializers.CharField()
 
@@ -59,8 +48,7 @@ class DetailCreateSerializer(serializers.ModelSerializer):
             new_val.append(feature_id)
         return new_val
     
-    def validate_delivery_time_in_days(self,value):
-             
+    def validate_delivery_time_in_days(self,value):        
         if value <= 0:
             raise serializers.ValidationError("delivery time can only be positive integers")
         return value
@@ -101,26 +89,14 @@ class OfferCreateSerializer(serializers.ModelSerializer):
             detail = OfferDetail.objects.create(offer=offer, **val_detail)
             for val in val_features:
                 detail.features.add(val) 
-        
         return offer
 
- 
 
 class DetailQuerySerializer(serializers.ModelSerializer):
     features =   FeatureCreateSerializer()  
     class Meta:
         model = OfferDetail
         fields = ['id', 'title','revisions','delivery_time_in_days','price','features','offer_type', ]
-
-    # def to_representation(self, data):
-    #         print(f"data{data}")
-    #         print(f"self{self}")
-    #         req = self.parent.parent.parent
-    #         print(f"req {req}")
-    #         # data = data.filter(delete=False)
-    #         return super(DetailQuerySerializer, self).to_representation(data)
-    
-
 
 class SingleOfferGetSerializer(serializers.ModelSerializer):
     user_details = UserProfileSerializer(source='user', read_only=True)
@@ -129,50 +105,46 @@ class SingleOfferGetSerializer(serializers.ModelSerializer):
         model = Offer
         fields = ['id', 'user','title', 'image', 'description', 'created_at', 'updated_at',  'details', 'min_price', 'min_delivery_time', 'user_details']
 
-    # def __init__(self, instance=None, data=..., **kwargs):
-    #     super().__init__(instance, data, **kwargs)
-
-
 class SingleOfferPatchSerializer(serializers.ModelSerializer):
     details = DetailQuerySerializer(many=True)
-    # details = serializers.SerializerMethodField('get_details')
-
     class Meta:
         model = Offer
         fields = ['id', 'user','title', 'image', 'description', 'created_at', 'updated_at',  'details', 'min_price', 'min_delivery_time',]
     
    
-    def update(self, instance, validated_data):
-        details_val = validated_data.pop('details')
-        if len(details_val) > 0:
-            details_queryset = OfferDetail.objects.filter(offer=instance)
-            for detail_val in details_val:
-                features_val = detail_val.pop('features')
-                detail_obj = details_queryset.get(offer_type=detail_val['offer_type'])
-                print(f"detail_obj{detail_obj}")
-                if detail_val['title']:
-                    detail_obj.title = detail_val['title']
-                if detail_val['revisions']:
-                    detail_obj.revisions = detail_val['revisions']
-                if detail_val['delivery_time_in_days']:
-                    detail_obj.delivery_time_in_days = detail_val['delivery_time_in_days']
-                if detail_val['price']:
-                    detail_obj.price = detail_val['price']
+    def update(self, instance, validated_data):        
+        try:
+            details_val = validated_data.pop('details')
+            if len(details_val) > 0:
+                details_queryset = OfferDetail.objects.filter(offer=instance)
+                for detail_val in details_val:
+                    features_val = detail_val.pop('features')
+                    detail_obj = details_queryset.get(offer_type=detail_val['offer_type'])
+                    if detail_val['title']:
+                        detail_obj.title = detail_val['title']
+                    if detail_val['revisions']:
+                        detail_obj.revisions = detail_val['revisions']
+                    if detail_val['delivery_time_in_days']:
+                        detail_obj.delivery_time_in_days = detail_val['delivery_time_in_days']
+                    if detail_val['price']:
+                        detail_obj.price = detail_val['price']
 
-                # remove all detail_feature relations and add new
-                detail_obj.features.clear()
+                    # remove all detail_feature relations and add new
+                    detail_obj.features.clear()
 
-                for feature_val in features_val:
-                    feature, created = Feature.objects.get_or_create(title=feature_val)
-                   
-                    detail_obj.features.add(feature)
-                detail_obj.save()
+                    for feature_val in features_val:
+                        feature, created = Feature.objects.get_or_create(title=feature_val)
+                    
+                        detail_obj.features.add(feature)
+                    detail_obj.save()
+        except:
+            pass
 
+        instance.image = validated_data.get('image', instance.image)
         instance.title = validated_data.get('title', instance.title)
         instance.image = validated_data.get('image', instance.image)
         instance.description = validated_data.get('description', instance.description)
 
         instance.updated_at = timezone.now()
         instance.save()
-        # print(f"instance{instance}")
         return instance

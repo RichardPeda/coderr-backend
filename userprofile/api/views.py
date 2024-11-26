@@ -1,24 +1,16 @@
-import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
-from offer.api.serializers import DetailQuerySerializer
-from offer.models import Offer, OfferDetail
-from order.api.serializers import OrderSerializer, OrderSetSerializer
-from order.models import Order
+from offer.models import Offer
 from userprofile.api.permissions import IsOwnerOrAdmin
-from userprofile.api.serializers import ReviewSerializer, UserGetProfileSerializer, UserProfileSerializer, UserSerializer
+from userprofile.api.serializers import RegistrationSerializer, ReviewSerializer, UserGetProfileSerializer, UserProfileSerializer
 from userprofile.models import Review, UserProfile
-from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.contrib.auth.models import User
+from rest_framework.permissions import AllowAny
 from rest_framework import generics
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as filters
-# from rest_framework import filters
 
 from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -28,13 +20,23 @@ from django_filters.rest_framework import DjangoFilterBackend
 class BaseInfoView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
+        """
+        Retrieves general basic information about the platform, including the number of reviews, the average review score,
+        the number of business users (business profiles) and the number of listings.
+
+        Returns:
+            JSON: Returns the review count, average rating, business user count and offer count.
+        """
         reviews = Review.objects.all()
         offers = Offer.objects.all()
         profiles= UserProfile.objects.filter(type='business')
         average_rating = 0
         for review in reviews:
             average_rating += review.rating
-        average_rating = average_rating/len(reviews)
+        
+        if len(reviews) > 0:
+            average_rating = average_rating/len(reviews)
+
         return Response({
             "review_count": len(reviews),
             "average_rating": average_rating,
@@ -46,51 +48,40 @@ class BaseInfoView(APIView):
 
 class ReviewModelFilter(filters.FilterSet):
     business_user_id = filters.NumberFilter(field_name='business_user')
-
     class Meta:
         model = Review
         fields = ['business_user_id']
 
 class ReviewView(generics.ListCreateAPIView):
+    """
+    Lists all available reviews or creates a new review for a business user if the user is authenticated and has a customer role.
+    GET: Retrieves a list of all ratings, which can be sorted by updated_at or rating.
+    POST: Creates a new rating. Only authenticated users who have a customer profile can create ratings. A user can only submit one rating per business profile.
+    """
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     pagination_class = None
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ['rating', 'updated_at']
-    # filterset_fields = ['business_user_id']
     filterset_class = ReviewModelFilter
-    
-    
-    
-    
-    # def get(self, request):
-    #     queryset = Review.objects.all()
-
-    #     business_user_id_param = self.request.query_params.get('business_user_id', None)
-    #     print(business_user_id_param)
-    #     if business_user_id_param is not None:
-    #         queryset = queryset.filter(business_user=business_user_id_param)
-
-    #     reviewer_id_param = self.request.query_params.get('reviewer_id', None)
-    #     if reviewer_id_param is not None:
-    #         queryset = queryset.filter(reviewer=reviewer_id_param)
-
-    #     serializer = ReviewSerializer(queryset, many=True)
-    #     return Response(serializer.data)
     
 
 class LoginView(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         """
-        *This function handles a post request for login of a registerd user.*
-        *A post request returns a token, user id, email and name when the user exists.*
+        Authenticates a user and returns an authentication token that is used for further API requests.
+
+        Args:
+            request (auth.user): Only authenticated users
+
+        Returns:
+            JSON: Response with token, user id, email and username.
         """
         serializer = self.serializer_class(data=request.data,
                                            context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         profile = UserProfile.objects.get(user=user)
-        print(user.username)
         token, created = Token.objects.get_or_create(user=user)
         return Response({
             'token': token.key,
@@ -103,25 +94,34 @@ class RegisterView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
         """
-        A GET-request return the html of the register page.
-        A POST-request compares the given passwords and creates a new user.
+        A POST-request compares the given passwords and if the user or the email already exists.
+        This API provides endpoints for user login and registration.
+        Login provides the user with a token for authentication and registration creates a new user,
+        automatically assigning a customer or business user profile.
         The function returns a JSON when is was successfull.
+
+        Args:
+            request (data): username: Username of the new user. Email: Email address of the new user.
+	        Password: Password for the new user. Repeated_password: Repetition of the password for confirmation.
+	        Type: Profile type (business or customer profile).
+
+        Returns:
+            JSON: Response with token, user id, email and username.
         """
-        print(request.data)
-        passwort_1 = request.data['password']
-        passwort_2 = request.data['repeated_password']
-        if passwort_1 == passwort_2:
-            user = User.objects.create_user(username=request.data['username'], password=passwort_1, email=request.data['email'])
+        serializer = RegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            saved_account = serializer.save()
             
-            profile = UserProfile.objects.create(user=user, type=request.data['type'] )
-            token, created = Token.objects.get_or_create(user=user)
+            profile = UserProfile.objects.create(user=saved_account, id=saved_account.id, type=request.data['type'] )
+            token, created = Token.objects.get_or_create(user=saved_account)
             return Response({
             'token': token.key,
             'user_id': profile.pk,
-            'email': user.email,
-            'username' : user.username
-        })
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+            'email': saved_account.email,
+            'username' : saved_account.username
+            })
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
 class SingleProfileView(APIView):
@@ -133,8 +133,6 @@ class SingleProfileView(APIView):
         return Response(serializer.data)
     
     def patch(self, request, pk):
-        print(request.data)
-        # my_data = request.data.dict()
         profile = UserProfile.objects.get(pk=pk)  
         self.check_object_permissions(request, obj=profile)
       

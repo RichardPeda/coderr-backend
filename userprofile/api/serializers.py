@@ -1,6 +1,4 @@
-import json
 from rest_framework import serializers
-
 from userprofile.models import Review, UserProfile
 from django.contrib.auth.models import User
 
@@ -16,12 +14,10 @@ class UserFlattenSerializer(serializers.ModelSerializer):
         model = User
         fields = ['user','first_name', 'last_name', 'username', 'email']
         
-        
     def get_alternate_name(self, obj):
         return obj.pk
     
     
-        
 class UserGetProfileSerializer(serializers.ModelSerializer):
     user = UserFlattenSerializer()
     class Meta:
@@ -45,6 +41,7 @@ class UserGetProfileSerializer(serializers.ModelSerializer):
         instance.user.email = self.context['request'].POST.get('email', instance.user.email)
         instance.user.save()
                 
+        instance.file = validated_data.get('file', instance.file)
         instance.location = validated_data.get('location', instance.location)
         instance.tel = validated_data.get('tel', instance.tel)
         instance.description = validated_data.get('description', instance.description)
@@ -71,12 +68,47 @@ class ReviewSerializer(serializers.ModelSerializer):
       class Meta:
         model = Review
         fields = '__all__'
+    
 
+class RegistrationSerializer(serializers.ModelSerializer):
+    repeated_password = serializers.CharField(write_only=True)
+    
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password', 'repeated_password']
+        extra_kwargs = {
+            'password': {
+                'write_only': True
+            }
+        }
+            
+    def validate(self, data):
+        errors = {}
+        username = data.get("username")
+        if self.Meta.model.objects.filter(username__iexact=username).exists():
+           errors["username"] ="Dieser Benutzername ist bereits vergeben"
+           
+        email = data.get("email")
+        if self.Meta.model.objects.filter(email__iexact=email).exists():
+           errors["email"] ="Diese E-Mail-Adresse wird bereits verwendet"
 
-
-{
-    "user": {
-        "first_name": "Richie"
-     
-    }
-}
+        pw = data.get("password")
+        repeated_pw = data.get("repeated_password")
+        
+        if pw != repeated_pw:
+            errors["password"] ="Das Passwort ist nicht gleich mit dem wiederholten Passwort"
+        
+        if errors:
+            raise serializers.ValidationError(errors)
+        return data
+    
+    def save(self):
+        pw = self.validated_data['password']
+        repeated_pw = self.validated_data['repeated_password']
+        email = self.validated_data['email']
+        username = self.validated_data['username']        
+        account = User(email=email, username=username)
+        account.set_password(pw)
+        account.save()
+        
+        return account

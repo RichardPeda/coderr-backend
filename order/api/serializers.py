@@ -1,14 +1,8 @@
 import re
 from rest_framework import serializers
-
-from offer.api.serializers import DetailCreateSerializer, DetailSerializer, OfferGetSerializer
-from offer.models import Detail, Feature, OfferDetail
+from offer.api.serializers import DetailCreateSerializer
+from offer.models import Feature, OfferDetail
 from order.models import Order
-from userprofile.models import UserProfile
-
-
-
-
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -24,8 +18,6 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = '__all__'
 
-   
-
     def create(self, validated_data):
         return Order.objects.create(**validated_data)
     
@@ -34,10 +26,6 @@ class OrderSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-    
-    def validate_offer_detail_id(self, value):
-        print(value)
-        return value
     
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -59,8 +47,6 @@ class OrderSerializer(serializers.ModelSerializer):
         return representation
   
     
-   
-
 class OrderSetSerializer(serializers.Serializer):
     offer_detail = DetailCreateSerializer(read_only=True)
     offer_detail_id = serializers.PrimaryKeyRelatedField(
@@ -79,16 +65,12 @@ class OrderSetSerializer(serializers.Serializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        print(representation)
         customer_user = representation.pop('customer_user')
         business_user = representation.pop('business_user')
         status = representation.pop('status')
-
         representation['id'] = instance.id
-        
         representation['customer_user'] = int(re.search(r'\((.*?)\)',customer_user).group(1))
         representation['business_user'] = int(re.search(r'\((.*?)\)',business_user).group(1))
-        
         details = representation.pop('offer_detail')
         
         for key, value in details.items():
@@ -111,5 +93,4 @@ class OrderSetSerializer(serializers.Serializer):
                     )
 
         order.save() 
-        
         return order

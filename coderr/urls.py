@@ -1,19 +1,3 @@
-"""
-URL configuration for coderr project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -25,33 +9,23 @@ from userprofile.api.views import BaseInfoView, CustomerProfileView, LoginView, 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
-    path('api/login/', LoginView.as_view()),
-    path('api/registration/', RegisterView.as_view()),
-    path('api/profile/<int:pk>/', SingleProfileView.as_view()),  
-    path('api/profiles/business/', BusinessProfileView.as_view()),  
-    path('api/profiles/customer/', CustomerProfileView.as_view()),  
+    path('api/login/', LoginView.as_view(), name='login'),
+    path('api/registration/', RegisterView.as_view(), name='registration'),
+    path('api/profile/<int:pk>/', SingleProfileView.as_view(), name='singleprofile'),  
+    path('api/profiles/business/', BusinessProfileView.as_view(), name='businessprofile'),  
+    path('api/profiles/customer/', CustomerProfileView.as_view(), name='customerprofile'),  
 
-
-
-    path('api/offers/', OfferView.as_view()),
-    path('api/offers/<int:pk>/', SingleOfferView.as_view()),
+    path('api/offers/', OfferView.as_view(), name='offers'),
+    path('api/offers/<int:pk>/', SingleOfferView.as_view(), name='singleoffer'),
     path('api/offerdetails/<int:pk>/', OfferDetailsView.as_view(), name='offerdetail-detail'),
 
+    path('api/orders/', OrderView.as_view(), name='orders'),
+    path('api/orders/<int:pk>/', SingleOrderView.as_view(), name='singleorder'),
+    path('api/order-count/<int:pk>/', OrderCountView.as_view(), name='order-count'),
+    path('api/completed-order-count/<int:pk>/', CompetedOrderCountView.as_view(), name='completed-order-count'),
 
-    path('api/orders/', OrderView.as_view()),
-    path('api/orders/<int:pk>/', SingleOrderView.as_view()),
-    path('api/order-count/<int:pk>/', OrderCountView.as_view()),
-    path('api/completed-order-count/<int:pk>/', CompetedOrderCountView.as_view()),
-
-
-    path('api/base-info/', BaseInfoView.as_view()),
-    path('api/reviews/', ReviewView.as_view()),
-
-
-
+    path('api/base-info/', BaseInfoView.as_view(), name='base-info'),
+    path('api/reviews/', ReviewView.as_view(), name='reviews'),
 ]
-
-
-
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

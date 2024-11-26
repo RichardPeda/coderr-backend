@@ -13,10 +13,10 @@ class UserProfile(models.Model):
     }
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='userprofile_user')
     file = models.FileField(upload_to='uploads/userprofile/', null=True, blank=True)
-    location = models.CharField(max_length=20)
-    tel = models.CharField(max_length=20)
-    description = models.CharField(max_length=100)
-    working_hours = models.CharField(max_length=20)
+    location = models.CharField(max_length=20, blank=True)
+    tel = models.CharField(max_length=20, blank=True)
+    description = models.CharField(max_length=100, blank=True)
+    working_hours = models.CharField(max_length=20, blank=True)
     type = models.CharField(max_length=20, choices=TYPE_CHOICES, default=CUSTOMER)
     created_at = models.DateTimeField(auto_now_add=True)
 

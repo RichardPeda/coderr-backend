@@ -1,11 +1,6 @@
 from django.db import models
-from django.contrib.auth.models import User
-
-from offer.models import Feature, OfferDetail, Detail
+from offer.models import  OfferDetail
 from userprofile.models import UserProfile
-
-
-
 
 class Order(models.Model):
     PROGRESS = "in_progress"
