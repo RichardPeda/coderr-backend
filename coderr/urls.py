@@ -5,6 +5,12 @@ from django.conf.urls.static import static
 from offer.api.views import OfferView,OfferDetailsView, SingleOfferView
 from order.api.views import CompetedOrderCountView, OrderCountView, OrderView, SingleOrderView
 from userprofile.api.views import BaseInfoView, CustomerProfileView, LoginView, SingleProfileView, BusinessProfileView, RegisterView, ReviewView
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+
+
+
+
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -26,6 +32,12 @@ urlpatterns = [
 
     path('api/base-info/', BaseInfoView.as_view(), name='base-info'),
     path('api/reviews/', ReviewView.as_view(), name='reviews'),
+    # YOUR PATTERNS
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    # Optional UI:
+    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

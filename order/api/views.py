@@ -6,11 +6,15 @@ from order.models import Order
 from userprofile.models import UserProfile
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers
 
 
 class OrderView(APIView):
     
     permission_classes = [IsCustomerToPostOrder]
+    
+    @extend_schema(responses=OrderSerializer)
     def get(self, request):
         """
         This endpoint returns a list of orders created either by the user as a customer or as a business partner.
@@ -35,7 +39,7 @@ class OrderView(APIView):
         serializer = OrderSerializer(order, many=True)
         return Response(serializer.data)
         
-    
+    @extend_schema(responses=OrderSetSerializer)
     def post(self, request):
         """
         Create a new order based on the details of an offer (OfferDetail).
@@ -61,6 +65,9 @@ class OrderView(APIView):
     
 class SingleOrderView(APIView):
     permission_classes = [IsBusinessUserOrAdmin]
+    serialzer_class = OrderSerializer
+    
+    # @extend_schema(responses=OrderSerializer)
     def get(self, request, pk):
         """
         Retrieve the details of a specific order using the ID.
@@ -77,9 +84,10 @@ class SingleOrderView(APIView):
         except:
             order = Order.objects.none()
         self.check_object_permissions(request, order)
-        serializer = OrderSerializer(order)
+        serializer = self.serialzer_class(order)
         return Response(serializer.data)
     
+    # @extend_schema(responses=OrderSerializer)
     def patch(self, request,pk):
         """
         Updating the status of an order (e.g. from “in_progress” to “completed” or “canceled”).
@@ -93,7 +101,7 @@ class SingleOrderView(APIView):
         """
         order = Order.objects.get(pk=pk)
         self.check_object_permissions(request, order)
-        serializer = OrderSerializer(order, data=request.data, partial=True, context={'request': request})
+        serializer = self.serialzer_class(order, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -138,6 +146,10 @@ class OrderCountView(APIView):
             return Response({"error": "Business user not found."})
         
 class CompetedOrderCountView(APIView):
+    @extend_schema(responses=inline_serializer(name='OrderCountSerializer', fields={
+        'error' : serializers.CharField(),
+        'completed_order_count' : serializers.IntegerField()
+    }))
     def get(self, request, pk):
         """
         Returns the number of completed orders for a specific business user.

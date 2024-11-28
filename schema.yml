@@ -1,0 +1,1279 @@
+openapi: 3.0.3
+info:
+  title: Your Project API
+  version: 1.0.0
+  description: Your project description
+paths:
+  /api/base-info/:
+    get:
+      operationId: api_base_info_retrieve
+      description: |-
+        Retrieves general basic information about the platform, including the number of reviews, the average review score,
+        the number of business users (business profiles) and the number of listings.
+
+        Returns:
+            JSON: Returns the review count, average rating, business user count and offer count.
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseInfo'
+          description: ''
+  /api/completed-order-count/{id}/:
+    get:
+      operationId: api_completed_order_count_retrieve
+      description: |-
+        Returns the number of completed orders for a specific business user.
+        Completed orders have the status completed.
+
+        Args:
+            pk (int): Primary key of a specific user.
+
+        Returns:
+            JSON: If successfull the order count will be returned. Otherwise an error will be returned.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderCount'
+          description: ''
+  /api/login/:
+    post:
+      operationId: api_login_create
+      description: |-
+        Authenticates a user and returns an authentication token that is used for further API requests.
+
+        Args:
+            request (auth.user): Only authenticated users
+
+        Returns:
+            JSON: Response with token, user id, email and username.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AuthToken'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AuthToken'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthToken'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+          description: ''
+  /api/offerdetails/{id}/:
+    get:
+      operationId: api_offerdetails_retrieve
+      description: |-
+        Retrieves the details of a specific offer detail.
+        Args:
+            request (user): Authenticated user.
+            pk (int): primary key of the specific offer detail.
+
+        Returns:
+            JSON: Serialized offer detail.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/offers/:
+    get:
+      operationId: api_offers_retrieve
+      description: |-
+        This endpoint returns a list of offers.
+        Each offer contains an overview of the offer details, the minimum price and the shortest delivery time.
+        Query parameter:
+        "creator_id": Filters the offers according to the user who created them.
+        "min_price": Filters offers with a minimum price.
+        "max_delivery_time": Filters offers whose delivery time is shorter than or equal to the specified value.
+        "ordering": Sorts the offers according to the fields “updated_at” or “min_price”.
+        "search": Searches the fields “title” and “description” for matches.
+        "page_size": Specifies how many results should be returned per page. This is defined in the frontend in config.js, please set the page_size in your pagination to exactly the same value. This query parameter is not used directly.
+
+        Args:
+            request (auth.user): GET-Method allows any request
+
+        Returns:
+            JSON: The response is paginated according to PageNumberPagination. Returns a list of offers
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfferGet'
+          description: ''
+    post:
+      operationId: api_offers_create
+      description: |-
+        This endpoint makes it possible to create a new offer that must contain exactly three offer details (OfferDetail).
+        These details should cover the basic, standard and premium types.
+        Validation:
+        When creating an offer, exactly three details must be specified (and also the “offer_type” once each: basic, standard, premium).
+        In addition, everything should be present except an “image”.
+        The “revisions” are integers and start at -1 (the -1 is the “infinite revisions” case).
+        The “delivery_time_in_days” are only positive integers.
+        There should be at least one feature.
+
+        Args:
+            request (user, data): Only users who are also business users can create offers
+
+        Returns:
+            JSON: Serialized offer when successfull, otherwise an error.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OfferGet'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OfferGet'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OfferGet'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfferCreate'
+          description: ''
+  /api/offers/{id}/:
+    get:
+      operationId: api_offers_retrieve_2
+      description: |-
+        This endpoint returns a specific offer with the given primary key.
+
+        Args:
+            request (user): Authenticated user.
+            pk (int): primary key of a specific offer.
+
+        Returns:
+            JSON: Serialized offer.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleOfferGet'
+          description: ''
+    patch:
+      operationId: api_offers_partial_update
+      description: |-
+        Updates a specific offer. A PATCH only overwrites the specified fields.
+
+        Args:
+            request (user, data): Only users who are authenticated and owner of the offer (or admin) can edit.
+            pk (int): primary key of a specific offer
+
+        Returns:
+            JSON: Serialized updated offer or error when data are invalid.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSingleOfferGet'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSingleOfferGet'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSingleOfferGet'
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleOfferPatch'
+          description: ''
+    delete:
+      operationId: api_offers_destroy
+      description: |-
+        Deletes a specific offer
+
+        Args:
+            request (_type_): Only users who are authenticated and owner of the offer (or admin) can delete.
+            pk (int): primary key of the specific offer
+
+        Returns:
+            JSON: Empty JSON
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/order-count/{id}/:
+    get:
+      operationId: api_order_count_retrieve
+      description: |-
+        This endpoint returns the number of orders in progress for a specific business user.
+        Current orders are those with the status in_progress.
+
+        Args:
+            pk (_type_): Primary key of a specific user.
+
+        Returns:
+            JSON: If successfull the order count will be returned. Otherwise an error will be returned.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/orders/:
+    get:
+      operationId: api_orders_retrieve
+      description: |-
+        This endpoint returns a list of orders created either by the user as a customer or as a business partner.
+
+        Args:
+            request (user): Only orders created by the logged-in user either as a customer or as a business partner are returned.
+
+        Returns:
+            JSON: Serialized and filterd orders
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+    post:
+      operationId: api_orders_create
+      description: |-
+        Create a new order based on the details of an offer (OfferDetail).
+
+
+        Args:
+            request (user, data): Only users with a CustomerProfile can create orders.
+            The user specifies an OfferDetail ID and the order is created based on this offer.
+
+        Returns:
+            JSON: When the new order is created the serialized order will be returned, otherwise an error
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderSet'
+          description: ''
+  /api/orders/{id}/:
+    get:
+      operationId: api_orders_retrieve_2
+      description: |-
+        Retrieve the details of a specific order using the ID.
+
+        Args:
+            request (auth.user): Authorized user.
+            pk (_type_): primary key of the specific order.
+
+        Returns:
+            JSON: Serialized order if exists, otherwise empty.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: api_orders_partial_update
+      description: |-
+        Updating the status of an order (e.g. from “in_progress” to “completed” or “canceled”).
+
+        Args:
+            request (auth.user, data): Only the owner can update the order.
+            pk (int): The ID of the order to be updated.
+
+        Returns:
+            JSON: Serialized updated order or error.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: api_orders_destroy
+      description: |-
+        Delete a specific order.
+
+        Args:
+            request (auth.user): Only admin users (staff) may delete orders.
+            pk (int): The ID of the order to delete.
+
+        Returns:
+            JSON: empty JSON
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/profile/{id}/:
+    get:
+      operationId: api_profile_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGetProfile'
+          description: ''
+    patch:
+      operationId: api_profile_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserGetProfile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserGetProfile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserGetProfile'
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGetProfile'
+          description: ''
+  /api/profiles/business/:
+    get:
+      operationId: api_profiles_business_retrieve
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /api/profiles/customer/:
+    get:
+      operationId: api_profiles_customer_retrieve
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /api/registration/:
+    post:
+      operationId: api_registration_create
+      description: |-
+        A POST-request compares the given passwords and if the user or the email already exists.
+        This API provides endpoints for user login and registration.
+        Login provides the user with a token for authentication and registration creates a new user,
+        automatically assigning a customer or business user profile.
+        The function returns a JSON when is was successfull.
+
+        Args:
+            request (data): username: Username of the new user. Email: Email address of the new user.
+                Password: Password for the new user. Repeated_password: Repetition of the password for confirmation.
+                Type: Profile type (business or customer profile).
+
+        Returns:
+            JSON: Response with token, user id, email and username.
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+          description: ''
+  /api/reviews/:
+    get:
+      operationId: api_reviews_list
+      description: |-
+        Lists all available reviews or creates a new review for a business user if the user is authenticated and has a customer role.
+        GET: Retrieves a list of all ratings, which can be sorted by updated_at or rating.
+        POST: Creates a new rating. Only authenticated users who have a customer profile can create ratings. A user can only submit one rating per business profile.
+      parameters:
+      - in: query
+        name: business_user_id
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+          description: ''
+    post:
+      operationId: api_reviews_create
+      description: |-
+        Lists all available reviews or creates a new review for a business user if the user is authenticated and has a customer role.
+        GET: Retrieves a list of all ratings, which can be sorted by updated_at or rating.
+        POST: Creates a new rating. Only authenticated users who have a customer profile can create ratings. A user can only submit one rating per business profile.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Review'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Review'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Review'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
+components:
+  schemas:
+    AuthToken:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        token:
+          type: string
+          readOnly: true
+      required:
+      - password
+      - token
+      - username
+    BaseInfo:
+      type: object
+      properties:
+        review_count:
+          type: integer
+        average_rating:
+          type: integer
+        business_profile_count:
+          type: integer
+        offer_count:
+          type: integer
+      required:
+      - average_rating
+      - business_profile_count
+      - offer_count
+      - review_count
+    Detail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 30
+        revisions:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        delivery_time_in_days:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        price:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        offer_type:
+          type: string
+          maxLength: 10
+        features:
+          type: array
+          items:
+            type: string
+      required:
+      - delivery_time_in_days
+      - features
+      - id
+      - offer_type
+      - price
+      - revisions
+      - title
+    DetailCreate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 30
+        revisions:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        delivery_time_in_days:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        price:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        features:
+          type: array
+          items: {}
+        offer_type:
+          type: string
+          maxLength: 10
+      required:
+      - delivery_time_in_days
+      - features
+      - id
+      - offer_type
+      - price
+      - revisions
+      - title
+    DetailQuery:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 30
+        revisions:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        delivery_time_in_days:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        price:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        features:
+          type: array
+          items: {}
+        offer_type:
+          type: string
+          maxLength: 10
+      required:
+      - delivery_time_in_days
+      - features
+      - id
+      - offer_type
+      - price
+      - revisions
+      - title
+    OfferCreate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 30
+        image:
+          type: string
+          format: uri
+          nullable: true
+        description:
+          type: string
+          maxLength: 100
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetailCreate'
+      required:
+      - description
+      - details
+      - id
+      - title
+    OfferDetailUrl:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        url:
+          type: string
+          format: uri
+          readOnly: true
+      required:
+      - id
+      - url
+    OfferGet:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+        title:
+          type: string
+          maxLength: 30
+        image:
+          type: string
+          format: uri
+          nullable: true
+        description:
+          type: string
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/OfferDetailUrl'
+        min_price:
+          type: number
+          format: double
+          maximum: 100000
+          minimum: -100000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        min_delivery_time:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        user_details:
+          allOf:
+          - $ref: '#/components/schemas/UserProfile'
+          readOnly: true
+      required:
+      - description
+      - details
+      - id
+      - title
+      - user
+      - user_details
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        offer_detail:
+          allOf:
+          - $ref: '#/components/schemas/DetailCreate'
+          readOnly: true
+        offer_detail_id:
+          type: integer
+          writeOnly: true
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        customer_user:
+          type: integer
+        business_user:
+          type: integer
+      required:
+      - business_user
+      - customer_user
+      - id
+      - offer_detail
+      - offer_detail_id
+    OrderCount:
+      type: object
+      properties:
+        error:
+          type: string
+        completed_order_count:
+          type: integer
+      required:
+      - completed_order_count
+      - error
+    OrderSet:
+      type: object
+      properties:
+        offer_detail:
+          allOf:
+          - $ref: '#/components/schemas/DetailCreate'
+          readOnly: true
+        offer_detail_id:
+          type: integer
+          writeOnly: true
+        customer_user:
+          type: string
+          readOnly: true
+        business_user:
+          type: string
+          readOnly: true
+        status:
+          type: string
+          default: in_progress
+          maxLength: 30
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - business_user
+      - created_at
+      - customer_user
+      - offer_detail
+      - offer_detail_id
+      - updated_at
+    PatchedSingleOfferGet:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+        title:
+          type: string
+          maxLength: 30
+        image:
+          type: string
+          format: uri
+          nullable: true
+        description:
+          type: string
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetailQuery'
+        min_price:
+          type: number
+          format: double
+          maximum: 100000
+          minimum: -100000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        min_delivery_time:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        user_details:
+          allOf:
+          - $ref: '#/components/schemas/UserProfile'
+          readOnly: true
+    PatchedUserGetProfile:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserFlatten'
+        file:
+          type: string
+          format: uri
+          nullable: true
+        location:
+          type: string
+          maxLength: 20
+        tel:
+          type: string
+          maxLength: 20
+        description:
+          type: string
+          maxLength: 100
+        working_hours:
+          type: string
+          maxLength: 20
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    RegisterResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user_id:
+          type: integer
+        email:
+          type: string
+        username:
+          type: string
+      required:
+      - email
+      - token
+      - user_id
+      - username
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        rating:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        description:
+          type: string
+          maxLength: 200
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        business_user:
+          type: integer
+        reviewer:
+          type: integer
+      required:
+      - business_user
+      - created_at
+      - description
+      - id
+      - rating
+      - reviewer
+      - updated_at
+    SingleOfferGet:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+        title:
+          type: string
+          maxLength: 30
+        image:
+          type: string
+          format: uri
+          nullable: true
+        description:
+          type: string
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetailQuery'
+        min_price:
+          type: number
+          format: double
+          maximum: 100000
+          minimum: -100000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        min_delivery_time:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        user_details:
+          allOf:
+          - $ref: '#/components/schemas/UserProfile'
+          readOnly: true
+      required:
+      - description
+      - details
+      - id
+      - title
+      - user
+      - user_details
+    SingleOfferPatch:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+        title:
+          type: string
+          maxLength: 30
+        image:
+          type: string
+          format: uri
+          nullable: true
+        description:
+          type: string
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetailQuery'
+        min_price:
+          type: number
+          format: double
+          maximum: 100000
+          minimum: -100000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        min_delivery_time:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+      required:
+      - description
+      - details
+      - id
+      - title
+      - user
+    StatusEnum:
+      enum:
+      - in_progress
+      - completed
+      - cancelled
+      type: string
+      description: |-
+        * `in_progress` - in_progress
+        * `completed` - completed
+        * `cancelled` - cancelled
+    TypeEnum:
+      enum:
+      - business
+      - customer
+      type: string
+      description: |-
+        * `business` - business
+        * `customer` - customer
+    User:
+      type: object
+      properties:
+        pk:
+          type: integer
+          readOnly: true
+          title: ID
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+      required:
+      - pk
+      - username
+    UserFlatten:
+      type: object
+      properties:
+        user:
+          type: string
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+      required:
+      - user
+      - username
+    UserGetProfile:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserFlatten'
+        file:
+          type: string
+          format: uri
+          nullable: true
+        location:
+          type: string
+          maxLength: 20
+        tel:
+          type: string
+          maxLength: 20
+        description:
+          type: string
+          maxLength: 100
+        working_hours:
+          type: string
+          maxLength: 20
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - user
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          $ref: '#/components/schemas/User'
+        file:
+          type: string
+          format: uri
+          nullable: true
+        location:
+          type: string
+          maxLength: 20
+        tel:
+          type: string
+          maxLength: 20
+        description:
+          type: string
+          maxLength: 100
+        working_hours:
+          type: string
+          maxLength: 20
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - user
+  securitySchemes:
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Token-based authentication with required prefix "Token"

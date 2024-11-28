@@ -14,11 +14,19 @@ from django_filters import rest_framework as filters
 
 from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema, extend_schema_serializer, inline_serializer
+from rest_framework import serializers
 
 
 
 class BaseInfoView(APIView):
     permission_classes = [AllowAny]
+    @extend_schema(responses=inline_serializer(name='BaseInfoSerializer', fields={
+        'review_count' : serializers.IntegerField(),
+        'average_rating' : serializers.IntegerField(),
+        'business_profile_count' : serializers.IntegerField(),
+        'offer_count' : serializers.IntegerField(),
+    }))
     def get(self, request):
         """
         Retrieves general basic information about the platform, including the number of reviews, the average review score,
@@ -67,6 +75,7 @@ class ReviewView(generics.ListCreateAPIView):
     
 
 class LoginView(ObtainAuthToken):
+    
     def post(self, request, *args, **kwargs):
         """
         Authenticates a user and returns an authentication token that is used for further API requests.
@@ -92,6 +101,13 @@ class LoginView(ObtainAuthToken):
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
+    
+    @extend_schema(responses=inline_serializer(name='RegisterResponseSerializer', fields={
+        'token' : serializers.CharField(),
+        'user_id' : serializers.IntegerField(),
+        'email' : serializers.CharField(),
+        'username' : serializers.CharField()
+    }))
     def post(self, request):
         """
         A POST-request compares the given passwords and if the user or the email already exists.
@@ -125,30 +141,37 @@ class RegisterView(APIView):
     
 
 class SingleProfileView(APIView):
+    
     permission_classes = [IsOwnerOrAdmin]
+    serializer_class = UserGetProfileSerializer
+    
+    @extend_schema(responses=UserGetProfileSerializer)
     def get(self, request, pk):
         profile = UserProfile.objects.get(pk=pk)
         self.check_object_permissions(request, obj=profile)
-        serializer = UserGetProfileSerializer(profile)
+        serializer = self.serializer_class(profile)
         return Response(serializer.data)
     
+    @extend_schema(responses=UserGetProfileSerializer)
     def patch(self, request, pk):
         profile = UserProfile.objects.get(pk=pk)  
         self.check_object_permissions(request, obj=profile)
       
-        serializer = UserGetProfileSerializer(profile, data=request.data, partial=True, context={'request': request})
+        serializer = self.serializer_class(profile, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors)
 
 class BusinessProfileView(APIView):
+    @extend_schema(responses=UserProfileSerializer)
     def get(self, request):
         profiles = UserProfile.objects.filter(type='business')
         serializer = UserProfileSerializer(profiles, many=True)
         return Response(serializer.data)
     
 class CustomerProfileView(APIView):
+    @extend_schema(responses=UserProfileSerializer)
     def get(self, request):
         profiles = UserProfile.objects.filter(type='customer')
         serializer = UserProfileSerializer(profiles, many=True)

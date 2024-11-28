@@ -7,6 +7,7 @@ from offer.api.permissions import IsBusinessUserToCreateOffer, IsOwnerOfOfferOrA
 from userprofile.models import UserProfile
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
+from drf_spectacular.utils import extend_schema
 
 
 
@@ -71,7 +72,7 @@ class OfferView(APIView):
         return paginator.get_paginated_response(serializer.data)
     
     
-    
+    @extend_schema(responses=OfferCreateSerializer)
     def post(self, request):
         """
         This endpoint makes it possible to create a new offer that must contain exactly three offer details (OfferDetail).
@@ -99,7 +100,9 @@ class OfferView(APIView):
 
 class SingleOfferView(APIView):
     permission_classes = [IsOwnerOfOfferOrAdmin]
-   
+    serializer_class = SingleOfferGetSerializer
+    
+    @extend_schema(responses=SingleOfferGetSerializer)
     def get(self, request, pk):
         """
         This endpoint returns a specific offer with the given primary key.
@@ -113,9 +116,10 @@ class SingleOfferView(APIView):
         """
         offer_detail = Offer.objects.get(pk=pk)
         self.check_object_permissions(request, offer_detail)
-        serializer = SingleOfferGetSerializer(offer_detail, context={'request': request})
+        serializer = self.serializer_class(offer_detail, context={'request': request})
         return Response(serializer.data)
     
+    @extend_schema(responses=SingleOfferPatchSerializer)
     def patch(self, request, pk):
         """
         Updates a specific offer. A PATCH only overwrites the specified fields.
@@ -157,16 +161,17 @@ class OfferDetailsView(APIView):
     serializer_class = DetailSerializer
     permission_classes = [IsOwnerOfOfferOrAdmin]
 
+    # @swagger_auto_schema(request_body=DetailSerializer)
     def get(self, request, pk):
         """
         Retrieves the details of a specific offer detail.
-
         Args:
             request (user): Authenticated user. 
             pk (int): primary key of the specific offer detail.
 
         Returns:
             JSON: Serialized offer detail.
+       
         """
         offer_detail = OfferDetail.objects.get(pk=pk)
         self.check_object_permissions(request, offer_detail)
