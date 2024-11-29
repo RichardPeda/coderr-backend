@@ -1,8 +1,12 @@
 openapi: 3.0.3
 info:
-  title: Your Project API
+  title: Coderr API
   version: 1.0.0
-  description: Your project description
+  description: This is the API for the corresponding Coderr App
+  contact:
+    name: Richard Peda
+    url: https://richard-peda.de
+    email: contact@richard-peda.de
 paths:
   /api/base-info/:
     get:

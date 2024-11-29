@@ -165,9 +165,10 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Your Project API',
-    'DESCRIPTION': 'Your project description',
+    'TITLE': 'Coderr API',
+    'DESCRIPTION': 'This is the API for the corresponding Coderr App',
     'VERSION': '1.0.0',
+    'CONTACT': {'name': 'Richard Peda', 'url' : 'https://richard-peda.de', 'email': 'contact@richard-peda.de'},
     'SERVE_INCLUDE_SCHEMA': False,
     # OTHER SETTINGS
 }
