@@ -25,5 +25,5 @@ You have to install the latest Python version on your computer.
  6. Run the command `python manage.py runserver` to start the app on your machine
 
  # Documentation
- The documentation of the endpoints is made with SwaggerUi.
- You can find it at the endpoint: [/api/schema/swagger-ui/](http://127.0.0.1:8000/api/schema/swagger-ui/)
+ The documentation of the endpoints was made with SwaggerUi.
+ With your local server running, you can find it at the endpoint: [/api/schema/swagger-ui/](http://127.0.0.1:8000/api/schema/swagger-ui/)
