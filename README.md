@@ -1,12 +1,14 @@
 # Coderr API
- This is the API of coderr written with Django 5.1.
+ This is the API of Coderr App written with Django 5.1.
  
- You can download the corresponding frontend app of coderr here https://github.com/RichardPeda/coderr-frontend
+ You can download the corresponding frontend app of coderr
+ [Coderr-Frontend-App](https://github.com/RichardPeda/coderr-frontend)
 
 
 ### Requirements
 You have to install the latest Python version on your computer.
-https://www.python.org/downloads/
+[Download Python](https://www.python.org/downloads/)
+
 
  ## Installation
  1. Clone this repository
