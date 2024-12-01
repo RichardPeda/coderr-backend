@@ -1,9 +1,10 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from offer.models import Offer
-from userprofile.api.permissions import IsOwnerOrAdmin
-from userprofile.api.serializers import RegistrationSerializer, ReviewSerializer, UserGetProfileSerializer, UserProfileSerializer
+from userprofile.api.permissions import IsCustomerCreateReview, IsOwnerOrAdmin
+from userprofile.api.serializers import BusinessUserProfileSerializer, CustomerUserProfileSerializer, RegistrationSerializer, ReviewSerializer, UserGetProfileSerializer
 from userprofile.models import Review, UserProfile
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
@@ -50,7 +51,7 @@ class BaseInfoView(APIView):
             "average_rating": average_rating,
             "business_profile_count": len(profiles),
             "offer_count": len(offers),
-            }
+            }, status=status.HTTP_200_OK
         )
 
 
@@ -68,11 +69,28 @@ class ReviewView(generics.ListCreateAPIView):
     """
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
+    permission_classes = [IsCustomerCreateReview]
     pagination_class = None
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ['rating', 'updated_at']
     filterset_class = ReviewModelFilter
     
+    def post(self, request, *args, **kwargs):
+        """
+        The request.user is also the reviewer
+        """
+        try:
+            reviewer = UserProfile.objects.get(user=request.user)
+        except UserProfile.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save(reviewer=reviewer)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors)
+       
+
 
 class LoginView(ObtainAuthToken):
     
@@ -97,7 +115,7 @@ class LoginView(ObtainAuthToken):
             'user_id': profile.pk,
             'email': user.email,
             'username' : user.username
-        })
+        }, status=status.HTTP_200_OK)
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -135,7 +153,7 @@ class RegisterView(APIView):
             'user_id': profile.pk,
             'email': saved_account.email,
             'username' : saved_account.username
-            })
+            }, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -147,14 +165,14 @@ class SingleProfileView(APIView):
     
     @extend_schema(responses=UserGetProfileSerializer)
     def get(self, request, pk):
-        profile = UserProfile.objects.get(pk=pk)
+        profile = get_object_or_404(UserProfile, pk=pk)
         self.check_object_permissions(request, obj=profile)
         serializer = self.serializer_class(profile)
         return Response(serializer.data)
     
     @extend_schema(responses=UserGetProfileSerializer)
     def patch(self, request, pk):
-        profile = UserProfile.objects.get(pk=pk)  
+        profile = get_object_or_404(UserProfile, pk=pk)
         self.check_object_permissions(request, obj=profile)
       
         serializer = self.serializer_class(profile, data=request.data, partial=True, context={'request': request})
@@ -164,16 +182,16 @@ class SingleProfileView(APIView):
         return Response(serializer.errors)
 
 class BusinessProfileView(APIView):
-    @extend_schema(responses=UserProfileSerializer)
+    @extend_schema(responses=BusinessUserProfileSerializer)
     def get(self, request):
         profiles = UserProfile.objects.filter(type='business')
-        serializer = UserProfileSerializer(profiles, many=True)
+        serializer = BusinessUserProfileSerializer(profiles, many=True)
         return Response(serializer.data)
     
 class CustomerProfileView(APIView):
-    @extend_schema(responses=UserProfileSerializer)
+    @extend_schema(responses=CustomerUserProfileSerializer)
     def get(self, request):
         profiles = UserProfile.objects.filter(type='customer')
-        serializer = UserProfileSerializer(profiles, many=True)
+        serializer = CustomerUserProfileSerializer(profiles, many=True)
         return Response(serializer.data)
 

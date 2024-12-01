@@ -8,6 +8,7 @@ from userprofile.models import UserProfile
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
 from drf_spectacular.utils import extend_schema
+from rest_framework import status
 
 
 
@@ -96,7 +97,7 @@ class OfferView(APIView):
         if serializer.is_valid():
             serializer.save(user=business_user)
             return Response(serializer.data)
-        return Response(serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_201_CREATED)
 
 class SingleOfferView(APIView):
     permission_classes = [IsOwnerOfOfferOrAdmin]
@@ -114,10 +115,15 @@ class SingleOfferView(APIView):
         Returns:
             JSON: Serialized offer.
         """
-        offer_detail = Offer.objects.get(pk=pk)
+        
+        try:
+            offer_detail = Offer.objects.get(pk=pk)
+        except Offer.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        
         self.check_object_permissions(request, offer_detail)
         serializer = self.serializer_class(offer_detail, context={'request': request})
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
     @extend_schema(responses=SingleOfferPatchSerializer)
     def patch(self, request, pk):
@@ -131,13 +137,16 @@ class SingleOfferView(APIView):
         Returns:
             JSON: Serialized updated offer or error when data are invalid.
         """
-        offer = Offer.objects.get(pk=pk)
+        try:
+            offer = Offer.objects.get(pk=pk)
+        except Offer.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+            
         self.check_object_permissions(request, offer)
         serializer = SingleOfferPatchSerializer(offer, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
-    
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors)
     
     def delete(self, request, pk):
@@ -151,10 +160,13 @@ class SingleOfferView(APIView):
         Returns:
             JSON: Empty JSON
         """
-        offer_instance = Offer.objects.get(pk=pk)
+        try:
+            offer_instance = Offer.objects.get(pk=pk)
+        except Offer.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
         self.check_object_permissions(request, offer_instance)
         offer_instance.delete()
-        return Response({})
+        return Response({}, status=status.HTTP_204_NO_CONTENT)
   
 
 class OfferDetailsView(APIView):
@@ -173,7 +185,10 @@ class OfferDetailsView(APIView):
             JSON: Serialized offer detail.
        
         """
-        offer_detail = OfferDetail.objects.get(pk=pk)
+        try:
+            offer_detail = OfferDetail.objects.get(pk=pk)
+        except OfferDetail.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
         self.check_object_permissions(request, offer_detail)
         serializer = self.serializer_class(offer_detail, context={'request': request})
         return Response(serializer.data)

@@ -22,21 +22,26 @@ class OrderSerializer(serializers.ModelSerializer):
         return Order.objects.create(**validated_data)
     
     def update(self, instance, validated_data):
+        """
+        The patch request changes the status of the order
+        """
         instance.status = validated_data.get('status', instance.status)
         instance.save()
         return instance
 
     
     def to_representation(self, instance):
+        """
+        Changes the representation of the Order.
+        Change the name of the offer_detail to details and remove the id of the fields
+        """
         representation = super().to_representation(instance)
         customer_user = representation.pop('customer_user')
         business_user = representation.pop('business_user')
         status = representation.pop('status')
-
         representation['id'] = instance.id
         representation['customer_user'] = customer_user
         representation['business_user'] = business_user
-        
         details = representation.pop('offer_detail')
         
         for key, value in details.items():
@@ -62,8 +67,12 @@ class OrderSetSerializer(serializers.Serializer):
     updated_at = serializers.DateTimeField(read_only=True)
 
 
-
     def to_representation(self, instance):
+        """
+        Change the representation of the fields.
+        Changes the full customer user and business user to their ids.
+        Change the name of offer_details to details and removes the id
+        """
         representation = super().to_representation(instance)
         customer_user = representation.pop('customer_user')
         business_user = representation.pop('business_user')
@@ -82,15 +91,21 @@ class OrderSetSerializer(serializers.Serializer):
   
 
     def create(self, validated_data):
-        detail = validated_data.pop('offer_detail')
-        details = OfferDetail.objects.get(pk=detail)
+        """
+        Create a new order with the given id of offer_detail if its existing
+        """
+        try:
+            detail = validated_data.pop('offer_detail')
+            details = OfferDetail.objects.get(pk=detail)
 
-        order = Order(business_user=details.offer.user,
-                    offer_detail=details,
-                    **validated_data,
-                    created_at=details.offer.created_at,
-                    updated_at=details.offer.updated_at
-                    )
+            order = Order(business_user=details.offer.user,
+                        offer_detail=details,
+                        **validated_data,
+                        created_at=details.offer.created_at,
+                        updated_at=details.offer.updated_at
+                        )
 
-        order.save() 
-        return order
+            order.save() 
+            return order
+        except:
+            return self.errors

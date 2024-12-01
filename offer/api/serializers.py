@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from offer.models import Feature, Offer, OfferDetail
-from userprofile.api.serializers import UserProfileSerializer
+from userprofile.api.serializers import GetUserOffersSerializer, UserFlattenSerializer
 from django.utils import timezone
 
 class FeatureSerializer(serializers.ModelSerializer):
@@ -20,7 +20,7 @@ class DetailSerializer(serializers.ModelSerializer):
         depth = 1
 
 class OfferGetSerializer(serializers.ModelSerializer):
-    user_details = UserProfileSerializer(source='user', read_only=True)
+    user_details = GetUserOffersSerializer(source='user', read_only=True)
     details = OfferDetailUrlSerializer(many=True)
     class Meta:
         model = Offer
@@ -30,9 +30,13 @@ class FeatureCreateSerializer(serializers.ListField):
     title = serializers.CharField()
 
     def to_representation(self, data):
+        """
+        Change the representation of the features, that only the titles will be returned.
+        """
         return [
             self.child.to_representation(item.title) for item in data.all()
         ]
+        
 class DetailCreateSerializer(serializers.ModelSerializer):
     features =   FeatureCreateSerializer()  
     class Meta:
@@ -40,6 +44,9 @@ class DetailCreateSerializer(serializers.ModelSerializer):
         fields = ['id', 'title','revisions','delivery_time_in_days','price','features','offer_type', ]
 
     def validate_features(self, value):
+        """
+        Validation of the features. It is not allowed to post empty features.
+        """
         if len(value) == 0:
             raise serializers.ValidationError("feature cannot be empty")
         new_val = []
@@ -48,7 +55,10 @@ class DetailCreateSerializer(serializers.ModelSerializer):
             new_val.append(feature_id)
         return new_val
     
-    def validate_delivery_time_in_days(self,value):        
+    def validate_delivery_time_in_days(self,value):  
+        """
+        Validate the delivery_time, that there are no negative values given.
+        """      
         if value <= 0:
             raise serializers.ValidationError("delivery time can only be positive integers")
         return value
@@ -60,9 +70,10 @@ class OfferCreateSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'image','description','details',]
         read_only_fields = ["user"]
       
-       
-    
     def validate_details(self, value):
+        """
+        Validating the details. Exactly three details must be given to the serializer.
+        """
         if len(value) != 3:
             raise serializers.ValidationError('When creating an offer, exactly three details must be provided')
         matches = ['basic', 'standard','premium']
@@ -74,22 +85,33 @@ class OfferCreateSerializer(serializers.ModelSerializer):
         return value
    
     def create(self, validated_data):
-        val_details = validated_data.pop('details')
-        offer = Offer(**validated_data)
-        prices=[]
-        delivery_time=[]
-        for val_detail in val_details:
-            prices.append(val_detail['price'])
-            delivery_time.append(val_detail['delivery_time_in_days'])
-        offer.min_price = min(prices)
-        offer.min_delivery_time = min(delivery_time)
-        offer.save()
-        for val_detail in val_details:
-            val_features = val_detail.pop('features')
-            detail = OfferDetail.objects.create(offer=offer, **val_detail)
-            for val in val_features:
-                detail.features.add(val) 
-        return offer
+        """
+        Creates an offer with the nested child objects.
+        The features are allready created in the validator of the DetailCreateSerializer
+        First create an offer and get the min price and the min delivery time of the details and save them to the offer.
+        After that, the details will be created and the relations will be set.
+        Feature related to Detail. Detail related to Offer.
+        """
+        try:
+            
+            val_details = validated_data.pop('details')
+            offer = Offer(**validated_data)
+            prices=[]
+            delivery_time=[]
+            for val_detail in val_details:
+                prices.append(val_detail['price'])
+                delivery_time.append(val_detail['delivery_time_in_days'])
+            offer.min_price = min(prices)
+            offer.min_delivery_time = min(delivery_time)
+            offer.save()
+            for val_detail in val_details:
+                val_features = val_detail.pop('features')
+                detail = OfferDetail.objects.create(offer=offer, **val_detail)
+                for val in val_features:
+                    detail.features.add(val) 
+            return offer
+        except:
+            return self.errors
 
 
 class DetailQuerySerializer(serializers.ModelSerializer):
@@ -99,7 +121,7 @@ class DetailQuerySerializer(serializers.ModelSerializer):
         fields = ['id', 'title','revisions','delivery_time_in_days','price','features','offer_type', ]
 
 class SingleOfferGetSerializer(serializers.ModelSerializer):
-    user_details = UserProfileSerializer(source='user', read_only=True)
+    user_details = GetUserOffersSerializer(source='user', read_only=True)
     details = DetailQuerySerializer(many=True)
     class Meta:
         model = Offer

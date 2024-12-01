@@ -11,5 +11,14 @@ class IsOwnerOrAdmin(BasePermission):
             return bool(user==obj or request.user.is_superuser)
 
 
+class IsCustomerCreateReview(BasePermission):
+    
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        if request.method == 'POST':
+            user= UserProfile.objects.get(user=request.user)
+            return bool(request.user and user.type == 'customer')
+            
 
         

@@ -8,6 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers
+from rest_framework import status
 
 
 class OrderView(APIView):
@@ -60,7 +61,7 @@ class OrderView(APIView):
         serializer = OrderSetSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(customer_user=customer_user)
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors)
     
 class SingleOrderView(APIView):
@@ -99,7 +100,11 @@ class SingleOrderView(APIView):
         Returns:
             JSON: Serialized updated order or error.
         """
-        order = Order.objects.get(pk=pk)
+        try:
+            order = Order.objects.get(pk=pk)
+        except Order.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        
         self.check_object_permissions(request, order)
         serializer = self.serialzer_class(order, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
@@ -118,10 +123,13 @@ class SingleOrderView(APIView):
         Returns:
             JSON: empty JSON
         """
-        order_instance = Order.objects.get(pk=pk)
-        self.check_object_permissions(request, order_instance)
-        order_instance.delete()
-        return Response({})
+        try:
+            order = Order.objects.get(pk=pk)
+        except Order.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        self.check_object_permissions(request, order)
+        order.delete()
+        return Response({}, status=status.HTTP_204_NO_CONTENT)
     
 class OrderCountView(APIView):
     def get(self, request, pk):
@@ -138,12 +146,12 @@ class OrderCountView(APIView):
         try:
             user = UserProfile.objects.get(user=pk)
             if not user.type == 'business':
-                return Response({"error": "Business user not found."})
+                return Response({"error": "Business user not found."}, status=status.HTTP_404_NOT_FOUND)
             orders = Order.objects.filter(business_user=user)
             orders = orders.filter(status='in_progress')
-            return Response({"order-count": len(orders)})
+            return Response({"order_count": len(orders)}, status=status.HTTP_200_OK)
         except ObjectDoesNotExist:
-            return Response({"error": "Business user not found."})
+            return Response({"error": "Business user not found."}, status=status.HTTP_404_NOT_FOUND)
         
 class CompetedOrderCountView(APIView):
     @extend_schema(responses=inline_serializer(name='OrderCountSerializer', fields={
@@ -164,12 +172,12 @@ class CompetedOrderCountView(APIView):
         try:
             user = UserProfile.objects.get(user=pk)
             if not user.type == 'business':
-                return Response({"error": "Business user not found."})
+                return Response({"error": "Business user not found."}, status=status.HTTP_404_NOT_FOUND)
             orders = Order.objects.filter(business_user=user)
             completed = orders.filter(status='completed')
-            return Response({"completed_order_count": len(completed)})
+            return Response({"completed_order_count": len(completed)}, status=status.HTTP_200_OK)
         except ObjectDoesNotExist:
-            return Response({"error": "Business user not found."})
+            return Response({"error": "Business user not found."}, status=status.HTTP_404_NOT_FOUND)
             
         
 
