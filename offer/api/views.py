@@ -46,23 +46,23 @@ class OfferView(APIView):
         queryset = Offer.objects.all()
         self.check_object_permissions(request, queryset)
         order_param = self.request.query_params.get('ordering', None)
-        if order_param is not None and order_param is not '':
+        if order_param is not None and order_param != '':
             queryset = queryset.order_by(order_param)
         
         creator_id_param = self.request.query_params.get('creator_id', None)
-        if creator_id_param is not None and creator_id_param is not '':
+        if creator_id_param is not None and creator_id_param  != '':
             queryset = queryset.filter(user=creator_id_param)
 
         min_price_param = self.request.query_params.get('min_price', None)
-        if min_price_param is not None and min_price_param is not '':
+        if min_price_param is not None and min_price_param  != '':
             queryset = queryset.filter(min_price=min_price_param)
 
         max_delivery_time_param = self.request.query_params.get('max_delivery_time', None)
-        if max_delivery_time_param is not None and max_delivery_time_param is not '':
+        if max_delivery_time_param is not None and max_delivery_time_param  != '':
             queryset = queryset.filter(min_delivery_time__lte=max_delivery_time_param)
             
         search_param = self.request.query_params.get('search', None)
-        if search_param is not None and search_param is not '':
+        if search_param is not None and search_param != '':
             queryset = queryset.filter(Q(title__icontains=search_param) | Q(description__icontains=search_param))
             
         pagination_class = LargeResultsSetPagination

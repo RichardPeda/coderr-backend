@@ -45,7 +45,7 @@ class OrderSerializer(serializers.ModelSerializer):
         details = representation.pop('offer_detail')
         
         for key, value in details.items():
-            if key is not 'id':
+            if key != 'id':
                 representation[key] = value
         
         representation['status'] = status
@@ -83,7 +83,7 @@ class OrderSetSerializer(serializers.Serializer):
         details = representation.pop('offer_detail')
         
         for key, value in details.items():
-            if key is not 'id':
+            if key != 'id':
                 representation[key] = value
         
         representation['status'] = status
