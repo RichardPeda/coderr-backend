@@ -70,8 +70,7 @@ class ReviewView(generics.ListCreateAPIView):
     """
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    # permission_classes = [IsCustomerCreateReview]
-    permission_classes = [AllowAny]
+    permission_classes = [IsCustomerCreateReview]
     pagination_class = None
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ['rating', 'updated_at']
