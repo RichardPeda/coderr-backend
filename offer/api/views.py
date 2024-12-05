@@ -85,7 +85,7 @@ class OfferView(APIView):
             page_size = re.sub('[/]', ' ', page_param)
             paginator.page_size= int(page_size)
         page = paginator.paginate_queryset(queryset, request, view=self)
-        serializer = self.serializer_class(page, many=True, context={'request': request})
+        serializer = self.serializer_class(page, many=True, context={'request': None})
         
         return paginator.get_paginated_response(serializer.data)
     
@@ -113,8 +113,8 @@ class OfferView(APIView):
         serializer = OfferCreateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=business_user)
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SingleOfferView(APIView):
@@ -164,7 +164,7 @@ class SingleOfferView(APIView):
         serializer = SingleOfferPatchSerializer(offer, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors)
     
     def delete(self, request, pk):
