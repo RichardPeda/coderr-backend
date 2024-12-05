@@ -11,7 +11,7 @@ class Offer(models.Model):
     description = models.CharField(max_length=100)
     created_at = models.DateTimeField(default=datetime.now)
     updated_at = models.DateTimeField(default=datetime.now)
-    min_price = models.CharField(max_length=30, blank=True)
+    min_price = models.DecimalField(max_digits=6, decimal_places=2)
     min_delivery_time = models.IntegerField(blank=True, null=True)
 
 class Feature(models.Model):
@@ -24,7 +24,7 @@ class Detail(models.Model):
     title = models.CharField(max_length=30)
     revisions = models.IntegerField()
     delivery_time_in_days = models.IntegerField()
-    price = models.CharField(max_length=30, blank=True)
+    price = models.DecimalField(max_digits=6, decimal_places=2)
     offer_type = models.CharField(max_length=10)
     features = models.ManyToManyField(Feature, related_name='features_set')
 

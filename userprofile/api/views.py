@@ -3,8 +3,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from offer.models import Offer
-from userprofile.api.permissions import IsCustomerCreateReview, IsOwnerOrAdmin
-from userprofile.api.serializers import BusinessUserProfileSerializer, CustomerUserProfileSerializer, RegistrationSerializer, ReviewSerializer, UserGetProfileSerializer
+from userprofile.api.permissions import IsCustomerCreateReview, IsOwnerOrAdmin, IsReviewerOrAdmin
+from userprofile.api.serializers import BusinessUserProfileSerializer, CustomerUserProfileSerializer, RegistrationSerializer, ReviewSerializer, SingleReviewSerializer, UserGetProfileSerializer
 from userprofile.models import Review, UserProfile
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
@@ -57,9 +57,10 @@ class BaseInfoView(APIView):
 
 class ReviewModelFilter(filters.FilterSet):
     business_user_id = filters.NumberFilter(field_name='business_user')
+    reviewer_id = filters.NumberFilter()
     class Meta:
         model = Review
-        fields = ['business_user_id']
+        fields = ['business_user_id', 'reviewer_id']
 
 class ReviewView(generics.ListCreateAPIView):
     """
@@ -69,28 +70,24 @@ class ReviewView(generics.ListCreateAPIView):
     """
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = [IsCustomerCreateReview]
+    # permission_classes = [IsCustomerCreateReview]
+    permission_classes = [AllowAny]
     pagination_class = None
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ['rating', 'updated_at']
     filterset_class = ReviewModelFilter
     
-    def post(self, request, *args, **kwargs):
-        """
-        The request.user is also the reviewer
-        """
-        try:
-            reviewer = UserProfile.objects.get(user=request.user)
-        except UserProfile.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            serializer.save(reviewer=reviewer)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors)
-       
+   
+    def perform_create(self, serializer):
+        # Reviewer aus der aktuellen Anfrage setzen
+        reviewer = UserProfile.objects.get(user=self.request.user)
+        serializer.save(reviewer=reviewer)
 
+class SingleReviewView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Review.objects.all()
+    serializer_class = SingleReviewSerializer
+    permission_classes = [IsReviewerOrAdmin]
+    
 
 class LoginView(ObtainAuthToken):
     

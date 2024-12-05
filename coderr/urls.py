@@ -4,7 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from offer.api.views import OfferView,OfferDetailsView, SingleOfferView
 from order.api.views import CompetedOrderCountView, OrderCountView, OrderView, SingleOrderView
-from userprofile.api.views import BaseInfoView, CustomerProfileView, LoginView, SingleProfileView, BusinessProfileView, RegisterView, ReviewView
+from userprofile.api.views import BaseInfoView, CustomerProfileView, LoginView, SingleProfileView, BusinessProfileView, RegisterView, ReviewView, SingleReviewView
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 
@@ -32,6 +32,7 @@ urlpatterns = [
 
     path('api/base-info/', BaseInfoView.as_view(), name='base-info'),
     path('api/reviews/', ReviewView.as_view(), name='reviews'),
+    path('api/reviews/<int:pk>/', SingleReviewView.as_view(), name='single-review'),
     # YOUR PATTERNS
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     # Optional UI:

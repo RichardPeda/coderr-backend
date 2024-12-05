@@ -1,14 +1,19 @@
+import re
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from offer.api.serializers import OfferGetSerializer, OfferCreateSerializer, DetailSerializer, SingleOfferGetSerializer, SingleOfferPatchSerializer
 from offer.models import Offer, OfferDetail
 from offer.api.permissions import IsBusinessUserToCreateOffer, IsOwnerOfOfferOrAdmin
-from userprofile.models import UserProfile
+from userprofile.models import Review, UserProfile
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
+from rest_framework import generics
+from rest_framework.filters import OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
+from django_filters import rest_framework as filters
 
 
 
@@ -18,6 +23,13 @@ class LargeResultsSetPagination(PageNumberPagination):
     page_size = 6
     page_size_query_param = 'page_size'
     max_page_size = 10000
+    
+class OfferFilter(filters.FilterSet):
+    business_user_id = filters.NumberFilter(field_name='business_user')
+    reviewer_id = filters.NumberFilter()
+    class Meta:
+        model = Review
+        fields = ['business_user_id', 'reviewer_id']
 
 class OfferView(APIView):
    
@@ -67,6 +79,11 @@ class OfferView(APIView):
             
         pagination_class = LargeResultsSetPagination
         paginator = pagination_class()
+        
+        page_param = self.request.query_params.get('page_size', None)
+        if page_param is not None and search_param != '':
+            page_size = re.sub('[/]', ' ', page_param)
+            paginator.page_size= int(page_size)
         page = paginator.paginate_queryset(queryset, request, view=self)
         serializer = self.serializer_class(page, many=True, context={'request': request})
         
@@ -98,6 +115,7 @@ class OfferView(APIView):
             serializer.save(user=business_user)
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_201_CREATED)
+
 
 class SingleOfferView(APIView):
     permission_classes = [IsOwnerOfOfferOrAdmin]

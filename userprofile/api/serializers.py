@@ -110,9 +110,20 @@ class GetUserOffersSerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-      class Meta:
+    reviewer = serializers.PrimaryKeyRelatedField(read_only=True)
+    class Meta:
         model = Review
         fields = '__all__'
+    
+class SingleReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = '__all__'
+        read_only_fields = ['business_user', 'reviewer','created_at', 'updated_at']
+    
+    
+        
+    
 
 class RegistrationSerializer(serializers.ModelSerializer):
     repeated_password = serializers.CharField(write_only=True)
