@@ -67,7 +67,7 @@ class OfferView(APIView):
 
         min_price_param = self.request.query_params.get('min_price', None)
         if min_price_param is not None and min_price_param  != '':
-            queryset = queryset.filter(min_price=str(min_price_param))
+            queryset = queryset.filter(min_price__gte=min_price_param)
 
         max_delivery_time_param = self.request.query_params.get('max_delivery_time', None)
         if max_delivery_time_param is not None and max_delivery_time_param  != '':
